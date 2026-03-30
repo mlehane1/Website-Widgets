@@ -95,7 +95,7 @@ function f3api_settings_page() {
             <td>
               <input type="number" name="<?php echo F3_API_OPTION; ?>[region_org_id]"
                      value="<?php echo esc_attr($saved['region_org_id'] ?? ''); ?>"
-                     placeholder="25273" style="width:150px">
+                     placeholder="Your region orgId" style="width:150px">
               <p class="description">
                 Find this at <a href="https://map.f3nation.com/admin/regions" target="_blank">map.f3nation.com/admin/regions</a>
                 — click your region and look for the ID field.
@@ -122,7 +122,7 @@ function f3api_settings_page() {
             <td>
               <input type="url" name="<?php echo F3_API_OPTION; ?>[region_url]"
                      value="<?php echo esc_attr($saved['region_url'] ?? ''); ?>"
-                     placeholder="https://f3waxhaw.com" style="width:300px">
+                     placeholder="https://yoursite.com" style="width:300px">
               <p class="description">Used in widget footers and links.</p>
             </td>
           </tr>

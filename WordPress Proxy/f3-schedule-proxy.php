@@ -161,7 +161,7 @@ function f3sp_settings_page() {
 
       <h2>Test Your Proxy</h2>
       <p>Replace <code>25273</code> with your region's orgId and open this URL in your browser:</p>
-      <code style="background:#f0f0f0;padding:8px 12px;display:inline-block;font-size:14px"><?php echo esc_url($proxy_url); ?>?regionOrgId=25273</code>
+      <code style="background:#f0f0f0;padding:8px 12px;display:inline-block;font-size:14px"><?php echo esc_url($proxy_url); ?>?regionOrgId=YOUR_REGION_ID</code>
       <p>You should see a JSON response with upcoming workouts. If you see an error, check your token.</p>
     </div>
     <?php
