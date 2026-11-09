@@ -62,8 +62,23 @@ The same deploy (same `F3_BEARER_TOKEN`) also serves these pages. Each one takes
 | `numbers.html` | **Daily Numbers** — PAX (and FNG) count at each AO for a day, from submitted backblasts. Built for the Weasel Shaker to screenshot or copy into Slack. Only AOs with a backblast posted appear. | `/numbers.html?regionOrgId=XXXXX&title=F3+Raleigh` (optional `&date=YYYY-MM-DD`) |
 | `missing-backblasts.html` | **Cold Cases** — past workouts that still have no backblast. | `/missing-backblasts.html?regionOrgId=XXXXX` |
 | `my-qs.html` | **My Qs** — every workout a PAX has Q'd or Co-Q'd in a year. Can look the user up by email. | `/my-qs.html?regionOrgId=XXXXX&userId=12345` (optional `&year=2025`, `&year=0` = all time) |
+| `locations.html` | **Locations** — every AO location from the F3 Nation Map: address, latitude/longitude, the workouts held there, and links to the F3 Map, Google Maps, Apple Maps and Waze. Each card has a **Copy link** button for linking that AO from your own website. | `/locations.html?regionOrgId=XXXXX` (optional `&ao=name` to pre-filter, `&title=`, `&siteUrl=`) |
 
-Their functions are `region-numbers`, `region-missing-backblasts`, `region-my-qs` and `region-user-by-email`, alongside `region-schedule`.
+Their functions are `region-numbers`, `region-missing-backblasts`, `region-my-qs`, `region-user-by-email` and `region-locations`, alongside `region-schedule`.
+
+### Linking an AO's location from your website
+
+`region-locations` looks the location up on the F3 Nation Map when the link is clicked, so if the pin moves on the map your link follows it.
+
+| You want | URL |
+|---|---|
+| Send visitors to directions for one AO | `/.netlify/functions/region-locations?locationId=12345&go=directions` |
+| …or match the AO by name | `/.netlify/functions/region-locations?regionOrgId=XXXXX&ao=stampede&go=directions` |
+| Other maps | `&go=map` (F3 Map) · `&go=google` · `&go=apple` · `&go=waze` |
+| All locations as JSON (lat/long, address, workouts, links) | `/.netlify/functions/region-locations?regionOrgId=XXXXX` |
+| As GeoJSON, for a Leaflet / Mapbox map | `/.netlify/functions/region-locations?regionOrgId=XXXXX&format=geojson` |
+
+By default, locations with no active workout are left out (they are usually stale pins). Add `&all=1` to include them. The location ids are on each card's **Copy link** button, and in the JSON.
 
 > The F3 Nation API caps `pageSize` at **100** (since Sep 2026); a larger value returns HTTP 400. `region-numbers` pages through results 100 at a time.
 

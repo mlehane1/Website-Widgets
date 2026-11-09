@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  F3 NATION LOCATIONS
+  ============================================================
+  Every AO location in a region, pulled live from the F3 Nation
+  Map: address, latitude / longitude, the workouts that meet
+  there, and one-tap links to the F3 Map, Google Maps, Apple
+  Maps and Waze.
+
+  HOW TO USE
+  ----------
+  Open with your region's ID in the URL:
+     /locations.html?regionOrgId=25250&title=F3%20Snacktown
+  Optional params:
+     &ao=stampede                     (pre-filter to one AO)
+     &siteUrl=https://your-site.com   (footer link)
+
+  LINKING FROM YOUR OWN WEBSITE
+  -----------------------------
+  Every card has a "Copy link" button. It copies a permanent
+  link that looks up the location in the F3 Nation Map at the
+  moment it is clicked and sends the visitor straight to the
+  map — so if the pin moves on the F3 Map, your link follows it:
+     /.netlify/functions/region-locations?locationId=51790&go=directions
+  go = map | google | apple | directions | waze
+
+  Raw data for developers:
+     /.netlify/functions/region-locations?regionOrgId=25250
+     /.netlify/functions/region-locations?regionOrgId=25250&format=geojson
+
+  No API token is needed in this file. It is safe to share
+  publicly.
+  ============================================================
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F3 Locations</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: #e5e5e5;
+  color: #111;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 60px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.f3l-wrap { width: 100%; max-width: 640px; min-width: 0; }
+
+/* ── Header ── */
+.f3l-hdr {
+  background: #111;
+  color: #fff;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.f3l-hdr-mark {
+  width: 44px; height: 44px; flex-shrink: 0;
+  object-fit: contain; background: #fff; border-radius: 3px; padding: 2px;
+}
+.f3l-hdr-text { flex: 1; min-width: 0; }
+.f3l-hdr-name { font-size: 17px; font-weight: 800; letter-spacing: .02em; line-height: 1.1; }
+.f3l-hdr-tag {
+  font-size: 10px; color: #aaa; letter-spacing: .12em;
+  text-transform: uppercase; margin-top: 4px;
+}
+.f3l-band {
+  background: #c8102e;
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* ── Search ── */
+.f3l-search {
+  width: 100%;
+  height: 44px;
+  margin: 14px 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 16px;            /* 16px stops iOS zooming on focus */
+  font-family: inherit;
+  background: #fff;
+  color: #111;
+}
+
+/* ── Location cards ── */
+.f3l-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-left: 4px solid #c8102e;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  min-width: 0;
+}
+.f3l-name { font-size: 18px; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.f3l-ao { font-size: 12px; color: #c8102e; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; margin-top: 4px; }
+.f3l-addr { font-size: 14px; color: #444; margin-top: 8px; overflow-wrap: anywhere; }
+.f3l-desc { font-size: 13px; color: #666; font-style: italic; margin-top: 4px; overflow-wrap: anywhere; }
+
+.f3l-wk { list-style: none; margin-top: 10px; font-size: 14px; }
+.f3l-wk li { padding: 3px 0; display: flex; gap: 10px; align-items: baseline; }
+.f3l-wk .d { font-weight: 800; flex: 0 0 84px; text-transform: capitalize; }
+.f3l-wk .t { color: #555; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+.f3l-ll {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  background: #f4f4f4;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.f3l-ll span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+.f3l-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.f3l-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #111;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.f3l-btn:hover { background: #111; color: #fff; border-color: #111; }
+.f3l-btn.primary { background: #c8102e; color: #fff; border-color: #c8102e; }
+.f3l-btn.primary:hover { background: #a50d24; border-color: #a50d24; }
+.f3l-btn.small { min-height: 30px; padding: 0 10px; font-size: 11px; }
+.f3l-btn.done { background: #1a6b35; color: #fff; border-color: #1a6b35; }
+
+.f3l-msg { background: #fff; border: 1px solid #ddd; padding: 24px 20px; font-size: 15px; color: #444; text-align: center; }
+.f3l-msg.err { color: #a50d24; }
+
+/* ── Developer box ── */
+.f3l-dev { background: #fff; border: 1px solid #ddd; padding: 16px 18px; margin-top: 18px; font-size: 13px; color: #333; }
+.f3l-dev summary { font-weight: 800; cursor: pointer; font-size: 14px; }
+.f3l-dev p { margin-top: 10px; }
+.f3l-dev code {
+  display: block;
+  margin-top: 4px;
+  background: #f4f4f4;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.f3l-foot { margin-top: 20px; font-size: 12px; color: #666; text-align: center; }
+.f3l-foot a { color: #c8102e; }
+</style>
+</head>
+<body>
+<div class="f3l-wrap">
+
+  <div class="f3l-hdr">
+    <img src="data:image/webp;base64,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" class="f3l-hdr-mark" alt="F3">
+    <div class="f3l-hdr-text">
+      <div class="f3l-hdr-name" id="f3l-title">F3 Locations</div>
+      <div class="f3l-hdr-tag">Where we meet · from the F3 Nation Map</div>
+    </div>
+  </div>
+  <div class="f3l-band" id="f3l-band">Loading…</div>
+
+  <input class="f3l-search" id="f3l-search" type="search" placeholder="Filter by AO, location or town" aria-label="Filter locations">
+
+  <div id="f3l-list"><div class="f3l-msg">Loading locations…</div></div>
+
+  <details class="f3l-dev">
+    <summary>Link to these from your own website</summary>
+    <p>Each card's <b>Copy link</b> button gives you a permanent link. When someone clicks it, the current pin is looked up on the F3 Nation Map and they are sent straight to directions. If the pin moves, the link still works.</p>
+    <p>Swap the end of the link for a different map:
+      <code>&amp;go=map · &amp;go=google · &amp;go=apple · &amp;go=waze · &amp;go=directions</code></p>
+    <p>All locations for this region as JSON (lat/long, address, workouts):
+      <code id="f3l-json"></code></p>
+    <p>As GeoJSON, for a Leaflet / Mapbox / Google map:
+      <code id="f3l-geo"></code></p>
+  </details>
+
+  <div class="f3l-foot" id="f3l-foot"></div>
+</div>
+
+<script>
+(function () {
+  var P = new URLSearchParams(location.search);
+  var CFG = {
+    REGION_ORG_ID: P.get('regionOrgId') || 25273,
+    TITLE: P.get('title') || '',
+    SITE_URL: P.get('siteUrl') || 'https://f3nation.com',
+    AO: P.get('ao') || '',
+    PROXY_URL: location.origin,
+  };
+  var FN = CFG.PROXY_URL + '/.netlify/functions/region-locations';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var list = $('f3l-list');
+  var search = $('f3l-search');
+  var all = [];
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function to12(t) {
+    if (!t) return '';
+    var m = /^(\d{2}):(\d{2})$/.exec(t);
+    if (!m) return t;
+    var h = +m[1], ap = h >= 12 ? 'pm' : 'am';
+    h = h % 12 || 12;
+    return h + ':' + m[2] + ap;
+  }
+
+  function copy(text, btn, label) {
+    var done = function () {
+      btn.textContent = 'Copied';
+      btn.classList.add('done');
+      setTimeout(function () { btn.textContent = label; btn.classList.remove('done'); }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallback(); });
+    } else { fallback(); }
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { btn.textContent = 'Copy failed'; }
+      document.body.removeChild(ta);
+    }
+  }
+
+  function card(l) {
+    var aoNames = l.aos.map(function (a) { return a.name; }).filter(function (n) { return n && n !== l.name; });
+    var wk = l.workouts.map(function (w) {
+      var t = to12(w.startTime) + (w.endTime ? '–' + to12(w.endTime) : '');
+      var label = w.name && w.name !== l.name ? ' · ' + esc(w.name) : '';
+      var types = w.types && w.types.length ? ' · ' + esc(w.types.join(', ')) : '';
+      return '<li><span class="d">' + esc(w.day || '') + '</span><span class="t">' + esc(t) + label + types + '</span></li>';
+    }).join('');
+    var hasLL = l.latitude != null && l.longitude != null;
+    var ll = hasLL ? l.latitude.toFixed(6) + ', ' + l.longitude.toFixed(6) : '';
+    var link = FN + '?locationId=' + l.id + '&go=directions';
+
+    var btns = '';
+    if (hasLL) btns += '<a class="f3l-btn primary" target="_blank" rel="noopener" href="' + esc(l.links.directions) + '">Directions</a>';
+    btns += '<a class="f3l-btn" target="_blank" rel="noopener" href="' + esc(l.links.map) + '">F3 Map</a>';
+    if (hasLL) {
+      btns += '<a class="f3l-btn" target="_blank" rel="noopener" href="' + esc(l.links.google) + '">Google</a>'
+           +  '<a class="f3l-btn" target="_blank" rel="noopener" href="' + esc(l.links.apple) + '">Apple</a>'
+           +  '<a class="f3l-btn" target="_blank" rel="noopener" href="' + esc(l.links.waze) + '">Waze</a>'
+           +  '<button class="f3l-btn" type="button" data-copy="' + esc(link) + '" data-label="Copy link">Copy link</button>';
+    }
+
+    return '<div class="f3l-card">'
+      + '<div class="f3l-name">' + esc(l.name) + '</div>'
+      + (aoNames.length ? '<div class="f3l-ao">' + esc(aoNames.join(' · ')) + '</div>' : '')
+      + (l.address ? '<div class="f3l-addr">' + esc(l.address) + '</div>' : '')
+      + (l.description ? '<div class="f3l-desc">' + esc(l.description) + '</div>' : '')
+      + (wk ? '<ul class="f3l-wk">' + wk + '</ul>' : '')
+      + (hasLL
+          ? '<div class="f3l-ll"><span>' + esc(ll) + '</span><button class="f3l-btn small" type="button" data-copy="' + esc(ll) + '" data-label="Copy">Copy</button></div>'
+          : '<div class="f3l-ll"><span>No pin on the F3 Map yet</span></div>')
+      + '<div class="f3l-btns">' + btns + '</div>'
+      + '</div>';
+  }
+
+  function render() {
+    var q = search.value.trim().toLowerCase();
+    var rows = !q ? all : all.filter(function (l) {
+      var hay = [l.name, l.address, l.description]
+        .concat(l.aos.map(function (a) { return a.name; }))
+        .concat(l.workouts.map(function (w) { return w.name; }))
+        .join(' ').toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+    list.innerHTML = rows.length
+      ? rows.map(card).join('')
+      : '<div class="f3l-msg">No locations match “' + esc(search.value) + '”.</div>';
+  }
+
+  list.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-copy]');
+    if (b) copy(b.getAttribute('data-copy'), b, b.getAttribute('data-label'));
+  });
+  search.addEventListener('input', render);
+
+  $('f3l-json').textContent = FN + '?regionOrgId=' + CFG.REGION_ORG_ID;
+  $('f3l-geo').textContent = FN + '?regionOrgId=' + CFG.REGION_ORG_ID + '&format=geojson';
+  $('f3l-foot').innerHTML = '<a href="' + esc(CFG.SITE_URL) + '">' + esc(CFG.SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</a> · Data: F3 Nation Map';
+  if (CFG.AO) search.value = CFG.AO;
+
+  fetch(FN + '?regionOrgId=' + encodeURIComponent(CFG.REGION_ORG_ID))
+    .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status)); return j; }); })
+    .then(function (j) {
+      all = j.locations || [];
+      var name = CFG.TITLE || (j.regionName ? 'F3 ' + j.regionName : 'F3 Locations');
+      $('f3l-title').textContent = name;
+      document.title = name + ' · Locations';
+      $('f3l-band').textContent = all.length + ' location' + (all.length === 1 ? '' : 's');
+      if (!all.length) { list.innerHTML = '<div class="f3l-msg">No active locations found for region ' + esc(CFG.REGION_ORG_ID) + '.</div>'; return; }
+      render();
+    })
+    .catch(function (err) {
+      $('f3l-band').textContent = 'Error';
+      list.innerHTML = '<div class="f3l-msg err">Could not load locations: ' + esc(err.message) + '<br>Check the regionOrgId in the URL.</div>';
+    });
+})();
+</script>
+</body>
+</html>
