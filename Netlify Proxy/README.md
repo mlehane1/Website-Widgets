@@ -80,6 +80,45 @@ Their functions are `region-numbers`, `region-missing-backblasts`, `region-my-qs
 
 By default, locations with no active workout are left out (they are usually stale pins). Add `&all=1` to include them. The location ids are on each card's **Copy link** button, and in the JSON.
 
+## Take this Q (`open-qs.html` + `q-take`)
+
+`/open-qs.html?regionOrgId=XXXXX` lists upcoming workouts with no Q (optional `&days=21`, default 14). Each has a **Take this Q** button:
+
+1. The PAX signs in with Slack. The sign-in is locked to your region's Slack workspace.
+2. `q-take` checks they signed in to **your** region's workspace, finds their F3 Nation profile by their Slack email, and checks the workout is yours, upcoming and not closed.
+3. It signs them up as Q in F3 Nation. If someone already has the Q, F3 Nation refuses, so an existing Q is never replaced.
+
+Until a region is set up, the page still lists the open Qs, with a note to sign up in Slack instead.
+
+### Setup
+
+**1. A Slack app (one app can serve many regions).** At [api.slack.com/apps](https://api.slack.com/apps) → Create New App → From scratch.
+- **OAuth & Permissions → Redirect URLs:** `https://your-site.netlify.app/.netlify/functions/q-take`
+- **OAuth & Permissions → User Token Scopes:** `openid`, `email`, `profile`
+- **Manage Distribution → Activate Public Distribution.** This is needed so people in your region's workspace can sign in if the app was created in a different workspace.
+- Copy the **Client ID** and **Client Secret** from Basic Information.
+
+**2. An F3 Nation API key from a region editor.** The person who creates it at [map.f3nation.com/admin/api-keys](https://map.f3nation.com/admin/api-keys) must be an **editor or admin of the region**. F3 Nation only lets a key sign someone else up as Q if its owner is an editor of that region.
+
+**3. Your Slack workspace ID.** In Slack, click the workspace name → Settings → the ID starts with `T`. Or open Slack in a browser: it's the `T…` part of the URL.
+
+**4. Netlify environment variables:**
+
+| Name | Value |
+|---|---|
+| `SLACK_CLIENT_ID` | from step 1 |
+| `SLACK_CLIENT_SECRET` | from step 1 |
+| `Q_SIGNING_SECRET` | any long random string |
+| `Q_REGIONS` | `regionOrgId=SlackWorkspaceId`, comma-separated: `25273=T0123ABCD,25250=T0456EFGH` |
+| `F3_Q_KEY_<regionOrgId>` | the editor key from step 2, e.g. `F3_Q_KEY_25273` (or `F3_Q_KEY` for every region) |
+| `Q_TIMEZONE` | optional, default `America/New_York` |
+
+Redeploy, then check `/.netlify/functions/q-take?check=1&regionOrgId=XXXXX` returns `{"enabled":true}`.
+
+> ⚠️ The editor key can sign anyone up as Q in that region, so it lives only in Netlify's environment variables, never in a page. Each successful take is logged in Netlify's function logs with the Slack user ID. In F3 Nation's own records, the change is attributed to the API key, not to the person.
+
+If someone's Slack email is different from the email on their F3 Nation profile, they'll see "No F3 profile for your Slack email". The fix is to make the two emails match.
+
 > The F3 Nation API caps `pageSize` at **100** (since Sep 2026); a larger value returns HTTP 400. `region-numbers` pages through results 100 at a time.
 
 ## Troubleshooting
