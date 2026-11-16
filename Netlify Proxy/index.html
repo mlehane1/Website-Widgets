@@ -278,6 +278,26 @@
   line-height: 1;
 }
 
+/* "TAKE THIS Q" — the Q Open badge becomes a button when the region has
+   Take this Q switched on (see the README). Opens in a new tab because
+   Slack's sign-in won't load inside an iframe. */
+a.f3w-q-take {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #c8102e;
+  border: 1px solid #c8102e;
+  border-radius: 3px;
+  padding: 6px 8px;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+a.f3w-q-take:hover { background: #a50d24; border-color: #a50d24; }
+
 /* ── LOADING / ERROR STATES ── */
 /* Shown while data is being fetched, or if something goes wrong */
 .f3w-state {
@@ -460,10 +480,19 @@ var F3W = {
       .replace(/"/g, '&quot;');
   }
 
+  // Is "Take this Q" switched on for this region? If so, the Q Open badge
+  // becomes a button. Any failure here just leaves the plain badge.
+  var canTakeQ = false;
+  var takeQCheck = fetch(F3W.PROXY_URL + '/.netlify/functions/q-take?check=1&regionOrgId=' + F3W.REGION_ORG_ID)
+    .then(function(r){ return r.ok ? r.json() : {}; })
+    .then(function(j){ canTakeQ = !!(j && j.enabled); })
+    .catch(function(){ canTakeQ = false; });
+
   fetch(F3W.PROXY_URL + '/.netlify/functions/region-schedule?regionOrgId=' + F3W.REGION_ORG_ID)
 
-  // Parse the JSON response
-  .then(function(r){ return r.json(); })
+  // Parse the JSON response (and wait for the Take this Q check)
+  .then(function(r){ return Promise.all([r.json(), takeQCheck]); })
+  .then(function(res){ return res[0]; })
 
   // Process and render the schedule data
   .then(function(data){
@@ -564,7 +593,20 @@ var F3W = {
             qHtml = '<div class="f3w-q-lbl">Q</div>'
                   + '<div class="f3w-q-name">' + esc(e.plannedQs) + '</div>';
           } else {
-            qHtml = '<div class="f3w-q-open">Q Open</div>';  // red badge if no Q
+            if (canTakeQ) {
+              // Back link: the widget page itself, unless it's embedded
+              // somewhere else (q-take only accepts same-site paths).
+              var takeUrl = F3W.PROXY_URL + '/.netlify/functions/q-take'
+                + '?eventInstanceId=' + encodeURIComponent(e.id)
+                + '&regionOrgId=' + encodeURIComponent(F3W.REGION_ORG_ID)
+                + (location.origin === F3W.PROXY_URL
+                    ? '&ret=' + encodeURIComponent(location.pathname + location.search) : '');
+              // Replaces the Q Open badge, in the same spot.
+              qHtml = '<a class="f3w-q-take" target="_blank" rel="noopener" href="'
+                    + esc(takeUrl) + '">Take this Q</a>';
+            } else {
+              qHtml = '<div class="f3w-q-open">Q Open</div>';  // red badge if no Q
+            }
           }
 
           // Build the full event row HTML
