@@ -59,8 +59,9 @@ exports.handler = async function (event) {
 // ── config ────────────────────────────────────────────────────────────────
 function regions() {
   const out = {};
+  // "25273=T0ABC1234" or "25273:T0ABC1234", comma-separated
   for (const part of (process.env.Q_REGIONS || '').split(',')) {
-    const [rid, team] = part.split('=').map((s) => (s || '').trim());
+    const [rid, team] = part.split(/[=:]/).map((s) => (s || '').trim());
     if (/^\d+$/.test(rid) && team) out[rid] = team;
   }
   return out;
