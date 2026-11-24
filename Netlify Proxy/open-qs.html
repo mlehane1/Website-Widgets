@@ -156,7 +156,7 @@ body {
       .catch(function () { return { enabled: false }; })
   ]).then(function (res) {
     var events = (res[0].events || []).filter(function (e) {
-      return !e.plannedQs && !e.seriesException && e.startDate >= from && e.startDate <= to;
+      return !e.plannedQs && e.seriesException !== 'closed' && e.startDate >= from && e.startDate <= to;
     });
     var canTake = !!res[1].enabled;
 

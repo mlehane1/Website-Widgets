@@ -210,7 +210,7 @@ async function callback(event, q) {
   const label = `${ev.org && ev.org.name ? ev.org.name : (ev.name || 'this workout')} on ${fmtDate(ev.startDate)}${ev.startTime ? ' at ' + fmtTime(ev.startTime) : ''}`;
 
   if (String(evRegion) !== rid) return page(403, 'Not this region\'s workout', 'That workout belongs to a different region.', ret);
-  if (ev.isActive === false || ev.seriesException) return page(409, 'Workout is closed', `${esc(label)} is closed, so it doesn't need a Q.`, ret);
+  if (ev.isActive === false || ev.seriesException === 'closed') return page(409, 'Workout is closed', `${esc(label)} is closed, so it doesn't need a Q.`, ret);
   if (!ev.startDate || ev.startDate < localToday()) return page(409, 'That workout has passed', `${esc(label)} is in the past.`, ret);
 
   // Take it. F3 Nation refuses if someone else already holds the Q.
