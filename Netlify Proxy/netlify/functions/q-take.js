@@ -18,8 +18,8 @@
 //   Q_SIGNING_SECRET     any long random string (signs the login round-trip)
 //   Q_REGIONS            which regions are switched on, and each one's Slack
 //                        workspace (team) ID:  25273=T0123ABCD,25250=T0456EFGH
-//   F3_Q_KEY_<regionId>  an F3 Nation API key whose owner is an EDITOR (or
-//                        admin) of that region, e.g. F3_Q_KEY_25273.
+//   F3_Q_KEY_<regionId>  an F3 Nation API key with the EDITOR (or ADMIN)
+//                        role on that region, set on the key itself, e.g. F3_Q_KEY_25273.
 //                        F3_Q_KEY is used for any region without its own.
 //   Q_TIMEZONE           optional, default America/New_York — decides what
 //                        "today" is when refusing past workouts.

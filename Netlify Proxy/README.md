@@ -98,7 +98,7 @@ Until a region is set up, the page still lists the open Qs, with a note to sign 
 - **Manage Distribution → Activate Public Distribution.** This is needed so people in your region's workspace can sign in if the app was created in a different workspace.
 - Copy the **Client ID** and **Client Secret** from Basic Information.
 
-**2. An F3 Nation API key from a region editor.** The person who creates it at [map.f3nation.com/admin/api-keys](https://map.f3nation.com/admin/api-keys) must be an **editor or admin of the region**. F3 Nation only lets a key sign someone else up as Q if its owner is an editor of that region.
+**2. An F3 Nation API key with the Editor role on your region.** A region **admin** creates it at [map.f3nation.com/admin/api-keys](https://map.f3nation.com/admin/api-keys). Under **Roles**, add **Editor** on the **region** itself. The key only has the roles added to the key; its owner's own roles don't count. A key with no roles, or one that is mistyped, revoked or expired, gets HTTP 401.
 
 **3. Your Slack workspace ID.** In Slack, click the workspace name → Settings → the ID starts with `T`. Or open Slack in a browser: it's the `T…` part of the URL.
 
